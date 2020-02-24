@@ -1,4 +1,4 @@
-Vibe - a simple roguelike text game. Written in Python/libtcod
+Vibe - a simple roguelike text rpg. Written in Python/libtcod
 
 Made by Tyler Sutton
 
