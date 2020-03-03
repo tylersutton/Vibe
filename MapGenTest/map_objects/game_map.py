@@ -1,3 +1,6 @@
+import tcod as libtcod
+
+from entity import Entity
 from map_objects.tile import Tile
 from random import randint
 
@@ -6,11 +9,13 @@ class GameMap:
         self.width = width
         self.height = height
         self.tiles = self.initialize_tiles()
+        for x in range(10):
+            self.smooth_tiles()
 
     def initialize_tiles(self):
         tiles = [[Tile(False) for y in range(self.height)] for x in range(self.width)]
         
-        fill_percentage = 45
+        fill_percentage = 43
         map_bound = 2
         for y in range(self.height):
             for x in range(self.width):
@@ -49,6 +54,23 @@ class GameMap:
                 else:
                     num_neighbors = num_neighbors + 1
         return num_neighbors
+
+    def place_entities(self, room, entities, max_monsters_per_room):
+        # Get a random number of monsters
+        number_of_monsters = randint(0, max_monsters_per_room)
+
+        for i in range(number_of_monsters):
+            # Choose a random location in the room
+            x = randint(room.x1 + 1, room.x2 - 1)
+            y = randint(room.y1 + 1, room.y2 - 1)
+
+            if not any([entity for entity in entities if entity.x == x and entity.y == y]):
+                if randint(0, 100) < 80:
+                    monster = Entity(x, y, 'B', libtcod.desaturated_green)
+                else:
+                    monster = Entity(x, y, 'W', libtcod.darker_green)
+
+                entities.append(monster)
 
     def is_blocked(self, x, y):
         if self.tiles[x][y].blocked:
