@@ -1,6 +1,8 @@
 import tcod as libtcod
+import time
 
-from entity import Entity
+from components.fighter import Fighter
+from entity import Entity, get_blocking_entities_at_location
 from fov_functions import initialize_fov, recompute_fov
 from input_handlers import handle_keys
 from map_objects.game_map import GameMap
@@ -17,17 +19,21 @@ def main():
     fov_light_walls = True
     fov_radius = 10
 
+    max_monsters_per_room = 10
+
+    time_moved_last = time.time()
+
     colors = {
         'dark_wall': libtcod.Color(10, 45, 25),
         'dark_ground': libtcod.Color(12, 60, 37),
-        'light_wall': libtcod.Color(30, 80, 40),
+        'light_wall': libtcod.Color(40, 80, 20),
         'light_ground': libtcod.Color(45, 115, 50)
     }
 
-    player = Entity(int(screen_width / 2), int(screen_height / 2), '@', libtcod.orange)
-    npc = Entity(int(screen_width / 2 - 5), int(screen_height / 2), ' ', libtcod.yellow)
-    entities = [npc, player]
-
+    fighter_component = Fighter(hp=30, defense=2, power=5, speed=10)
+    player = Entity(0, 0, '@', libtcod.white, 'Player', blocks=True, fighter=fighter_component)
+    entities = [player]
+    
     libtcod.console_set_custom_font('arial12x12.png', libtcod.FONT_TYPE_GREYSCALE | libtcod.FONT_LAYOUT_TCOD)
 
     libtcod.console_init_root(screen_width, screen_height, 'libtcod tutorial revised', False)
@@ -35,6 +41,7 @@ def main():
     con = libtcod.console_new(screen_width, screen_height)
 
     game_map = GameMap(map_width, map_height)
+    game_map.make_map(player, entities, max_monsters_per_room)
 
     fov_recompute = True
 
@@ -66,10 +73,18 @@ def main():
 
         if move:
             dx, dy = move
+            destination_x = player.x + dx
+            destination_y = player.y + dy
+            if not game_map.is_blocked(destination_x, destination_y):
+                target = get_blocking_entities_at_location(entities, destination_x, destination_y)
 
-            if not game_map.is_blocked(player.x + dx, player.y + dy):
-                player.move(dx, dy)
-                fov_recompute = True
+                if(time.time() - time_moved_last > (1/player.fighter.speed)):
+                    if target:
+                        print('You kick the ' + target.name + ' in the shins, much to its annoyance!')
+                    else:
+                        player.move(dx, dy)
+                        fov_recompute = True
+                    time_moved_last = time.time()
 
         if exit:
             return True
